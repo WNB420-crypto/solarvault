@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SolarVault — Solar Agency Platform</title>
+  <meta name="description" content="Complete solar agency sales platform: calculators, pipeline, proposals, training, and more." />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class', theme: { extend: {} } }</script>
+
+  <!-- React + ReactDOM (UMD) -->
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+
+  <!-- Recharts (UMD) -->
+  <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+
+  <!-- Three.js (UMD) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <!-- Lucide React Icons (UMD) -->
+  <script src="https://unpkg.com/lucide-react@0.427.0/dist/umd/lucide-react.js"></script>
+
+  <!-- Babel standalone for JSX -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.10/babel.min.js"></script>
+
+  <style>
+    html, body { margin: 0; padding: 0; background: #18181b; min-height: 100vh; }
+    #root { min-height: 100vh; }
+    #loading {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; color: #fbbf24; font-family: sans-serif; font-size: 1.2rem;
+    }
+  </style>
+</head>
+<body class="dark">
+  <div id="root"><div id="loading">⚡ Loading SolarVault…</div></div>
+
+  <script>
+    // Fetch the JSX file, transform it with Babel, then execute and mount
+    (async () => {
+      try {
+        const res = await fetch('/SolarVault.jsx');
+        const src = await res.text();
+        // Transform JSX → JS
+        const transformed = Babel.transform(src, {
+          presets: ['react'],
+          filename: 'SolarVault.jsx'
+        }).code;
+        // Execute in global scope so App becomes available
+        // eslint-disable-next-line no-eval
+        eval(transformed);
+        // Mount the App component
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(App));
+      } catch (err) {
+        document.getElementById('root').innerHTML =
+          '<div style="color:#f87171;padding:2rem;font-family:monospace">' +
+          '<h2>SolarVault failed to load</h2><pre>' + err.message + '</pre></div>';
+        console.error(err);
+      }
+    })();
+  </script>
+</body>
+</html>
