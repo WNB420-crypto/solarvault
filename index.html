@@ -106,26 +106,65 @@
   <div id="root"><div id="loading">⚡ Loading SolarVault…</div></div>
 
   <script>
-    // Fetch the JSX file, transform it with Babel, then execute and mount
+    // Error boundary class
+    class ErrorBoundary extends React.Component {
+      constructor(p) { super(p); this.state = {err: null}; }
+      static getDerivedStateFromError(e) { return {err: e}; }
+      render() {
+        if (this.state.err) {
+          return React.createElement('div', {
+            style:{color:'#f87171',padding:'2rem',fontFamily:'monospace',background:'#18181b',minHeight:'100vh'}
+          },
+            React.createElement('h2',{style:{color:'#fb923c',marginBottom:'1rem'}},'⚡ SolarVault — Render Error'),
+            React.createElement('pre',{style:{whiteSpace:'pre-wrap',fontSize:'0.85rem'}}, String(this.state.err))
+          );
+        }
+        return this.props.children;
+      }
+    }
+
+    function status(msg) {
+      document.getElementById('loading').textContent = msg;
+    }
+
+    // Global error catcher
+    window.onerror = (msg, src, line, col, err) => {
+      document.getElementById('root').innerHTML =
+        '<div style="color:#f87171;padding:2rem;fontFamily:monospace;background:#18181b;minHeight:100vh">' +
+        '<h2 style="color:#fb923c">⚡ SolarVault — JS Error</h2>' +
+        '<pre style="white-space:pre-wrap">' + msg + '\n\nLine ' + line + ': ' + (err&&err.stack||'') + '</pre></div>';
+    };
+
     (async () => {
       try {
+        status('⚡ Fetching app…');
         const res = await fetch('/SolarVault.jsx');
+        if (!res.ok) throw new Error('Failed to fetch SolarVault.jsx: ' + res.status);
         const src = await res.text();
-        // Transform JSX → JS
+
+        status('⚡ Compiling JSX…');
         const transformed = Babel.transform(src, {
           presets: ['react'],
           filename: 'SolarVault.jsx'
         }).code;
-        // Execute in global scope so App becomes available
-        // eslint-disable-next-line no-eval
-        eval(transformed);
-        // Mount the App component
+
+        status('⚡ Starting app…');
+        // Use indirect eval so App lands on window
+        (0, eval)(transformed);
+
+        if (typeof App === 'undefined') throw new Error('App component not found after eval. Check SolarVault.jsx for "function App".');
+
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(React.createElement(App));
+        root.render(
+          React.createElement(ErrorBoundary, null,
+            React.createElement(App)
+          )
+        );
       } catch (err) {
         document.getElementById('root').innerHTML =
-          '<div style="color:#f87171;padding:2rem;font-family:monospace">' +
-          '<h2>SolarVault failed to load</h2><pre>' + err.message + '</pre></div>';
+          '<div style="color:#f87171;padding:2rem;font-family:monospace;background:#18181b;min-height:100vh">' +
+          '<h2 style="color:#fb923c;margin-bottom:1rem">⚡ SolarVault — Load Error</h2>' +
+          '<pre style="white-space:pre-wrap">' + (err.stack || err.message) + '</pre></div>';
         console.error(err);
       }
     })();
