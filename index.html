@@ -14,8 +14,75 @@
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
 
-  <!-- Recharts (UMD) -->
-  <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+  <!-- Recharts shim: lightweight SVG chart components matching the Recharts API -->
+  <script>
+  (function(){
+    const h = React.createElement;
+    function ResponsiveContainer({children,height=300}){
+      return h('div',{style:{width:'100%',height}},
+        typeof children==='function'?children({width:0,height}):children);
+    }
+    function BarChart({children,data=[],width=400,height=300,margin={top:10,right:10,bottom:20,left:40}}){
+      const keys=[];
+      React.Children.forEach(children,c=>{if(c&&c.type&&c.type.__svgType==='Bar')keys.push({key:c.props.dataKey,fill:c.props.fill||'#fbbf24'})});
+      const vals=data.flatMap(d=>keys.map(k=>+d[k.key]||0));
+      const max=Math.max(...vals,1);
+      const W=width||400,H=height;
+      const pl=margin.left||40,pr=margin.right||10,pt=margin.top||10,pb=margin.bottom||20;
+      const cw=W-pl-pr,ch=H-pt-pb;
+      const bw=cw/(data.length*(keys.length+0.5)||1);
+      return h('svg',{viewBox:`0 0 ${W} ${H}`,style:{width:'100%',height:'100%',overflow:'visible'}},
+        h('g',{transform:`translate(${pl},${pt})`},
+          [0,0.25,0.5,0.75,1].map((t,i)=>h('g',{key:i},
+            h('line',{x1:0,x2:cw,y1:ch*(1-t),y2:ch*(1-t),stroke:'#3f3f46',strokeWidth:1}),
+            h('text',{x:-4,y:ch*(1-t)+4,textAnchor:'end',fontSize:10,fill:'#71717a'},Math.round(max*t))
+          )),
+          data.map((d,di)=>h('g',{key:di,transform:`translate(${di*(cw/data.length)},0)`},
+            keys.map((k,ki)=>h('rect',{key:ki,
+              x:ki*(bw),y:ch-(+d[k.key]||0)/max*ch,
+              width:bw*0.8,height:(+d[k.key]||0)/max*ch,
+              fill:k.fill,rx:2})),
+            h('text',{x:(bw*keys.length)/2,y:ch+14,textAnchor:'middle',fontSize:9,fill:'#71717a'},
+              String(d.name||d.month||d.city||d.state||'').slice(0,8))
+          ))
+        )
+      );
+    }
+    BarChart.prototype={};
+    function Bar(props){return null;}
+    Bar.__svgType='Bar';
+    function LineChart({children,data=[],width=400,height=300,margin={top:10,right:10,bottom:20,left:40}}){
+      const lines=[];
+      React.Children.forEach(children,c=>{if(c&&c.type&&c.type.__svgType==='Line')lines.push({key:c.props.dataKey,stroke:c.props.stroke||'#fbbf24'})});
+      const vals=data.flatMap(d=>lines.map(l=>+d[l.key]||0));
+      const max=Math.max(...vals,1);
+      const W=width||400,H=height;
+      const pl=margin.left||40,pr=margin.right||10,pt=margin.top||10,pb=margin.bottom||20;
+      const cw=W-pl-pr,ch=H-pt-pb;
+      const xs=i=>i*(cw/(data.length-1||1));
+      const ys=v=>ch-v/max*ch;
+      return h('svg',{viewBox:`0 0 ${W} ${H}`,style:{width:'100%',height:'100%',overflow:'visible'}},
+        h('g',{transform:`translate(${pl},${pt})`},
+          [0,0.25,0.5,0.75,1].map((t,i)=>h('g',{key:i},
+            h('line',{x1:0,x2:cw,y1:ch*(1-t),y2:ch*(1-t),stroke:'#3f3f46',strokeWidth:1}),
+            h('text',{x:-4,y:ch*(1-t)+4,textAnchor:'end',fontSize:10,fill:'#71717a'},Math.round(max*t))
+          )),
+          lines.map((l,li)=>h('polyline',{key:li,
+            points:data.map((d,i)=>`${xs(i)},${ys(+d[l.key]||0)}`).join(' '),
+            fill:'none',stroke:l.stroke,strokeWidth:2})),
+          data.map((d,di)=>h('text',{key:di,x:xs(di),y:ch+14,textAnchor:'middle',fontSize:9,fill:'#71717a'},
+            String(d.name||d.month||d.year||'').slice(0,6)))
+        )
+      );
+    }
+    function Line(props){return null;}
+    Line.__svgType='Line';
+    function Cell(){return null;}
+    function XAxis(){return null;} function YAxis(){return null;}
+    function CartesianGrid(){return null;} function Tooltip(){return null;}
+    window.Recharts={ResponsiveContainer,BarChart,Bar,LineChart,Line,Cell,XAxis,YAxis,CartesianGrid,Tooltip};
+  })();
+  </script>
 
   <!-- Three.js (UMD) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
