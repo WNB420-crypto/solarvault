@@ -127,6 +127,42 @@
       document.getElementById('loading').textContent = msg;
     }
 
+    // Safety proxy: any Lucide icon that doesn't exist in this CDN version
+    // returns a tiny inline SVG placeholder instead of undefined → error #130
+    if (window.LucideReact) {
+      window.LucideReact = new Proxy(window.LucideReact, {
+        get(target, prop) {
+          if (prop in target) return target[prop];
+          // Return a valid no-op React component for missing icons
+          return function MissingIcon({size=16, strokeWidth=2, color='currentColor', className=''}){
+            return React.createElement('svg',{
+              xmlns:'http://www.w3.org/2000/svg',
+              width:size, height:size, viewBox:'0 0 24 24',
+              fill:'none', stroke:color, strokeWidth, className,
+              style:{display:'inline-block',flexShrink:0}
+            },
+              React.createElement('circle',{cx:12,cy:12,r:9,opacity:0.3})
+            );
+          };
+        }
+      });
+    }
+
+    // Safety net for THREE if the CDN failed
+    if (!window.THREE) {
+      window.THREE = {
+        WebGLRenderer: function(){ return {setSize(){},render(){},domElement:document.createElement('canvas'),dispose(){}}; },
+        Scene: function(){ return {add(){},remove(){},background:null}; },
+        PerspectiveCamera: function(){ return {position:{set(){}},lookAt(){}}; },
+        AmbientLight: function(){ return {}; }, DirectionalLight: function(){ return {position:{set(){}}}; },
+        SphereGeometry: function(){ return {}; }, BoxGeometry: function(){ return {}; },
+        MeshStandardMaterial: function(){ return {}; }, Mesh: function(){ return {rotation:{x:0,y:0,z:0},position:{set(){}}}; },
+        AnimationMixer: function(){ return {update(){}}; },
+        Color: function(c){ return c; },
+        Vector3: function(x,y,z){ return {x,y,z}; },
+      };
+    }
+
     // Global error catcher
     window.onerror = (msg, src, line, col, err) => {
       document.getElementById('root').innerHTML =
