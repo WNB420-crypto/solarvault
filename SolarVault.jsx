@@ -3529,7 +3529,7 @@ function TutorialOverlay({ user, onComplete }){
   );
 }
 
-export default function App(){
+  function App(){
   const [view, setView] = useState('dashboard');
   const [loc, setLoc] = useState({ stateAbbr:null, cityIdx:null });
   const [prospects, setProspects] = useState([]);
